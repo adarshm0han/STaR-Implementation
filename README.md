@@ -18,17 +18,6 @@ Using consistent decoding with vLLM, the reported exact-match (EM) accuracies on
 
 The repo contains prompts, workflow notes, commands, results, and analysis to reproduce or extend the experiments.
 
-## Table of contents
-
-- Summary
-- Results
-- High-level workflow
-- Reproducing the experiments
-- Prompts and configuration
-- Evaluation
-- Contributing
-- License
-- Contact
 
 ## Results
 
@@ -44,51 +33,27 @@ Interpretation: STaR provides substantial gains over both prompting and vanilla 
 
 ## High-level workflow
 
-1. Prepare GSM8K dataset (train/validation/test) with questions and optional gold rationales.
+1. Pull GSM8K dataset (train/test) with questions, answers and optional gold rationales.
 2. Evaluate a base instruction-tuned model (meta-llama/Llama-3.2-3B-Instruct) with Zero-Shot CoT prompts to obtain a baseline.
 3. Train a Vanilla SFT model on the train split rationales to get the SFT baseline.
 4. Run STaR iterations:
-   - Use the current model to generate rationales for training examples, optionally using rationalization hints.
-   - Curate / filter the generated rationales (heuristics or automatic scoring).
-   - Fine-tune (SFT) on the curated rationales to obtain an improved model.
-   - Repeat the generate-filter-SFT loop for several iterations until convergence or performance plateau.
+   - Use the current model to generate rationales for training examples with just question and gold answer.
+   - Bootstrap these rationales to the dataset only if the answer is correct.
+   - Retrain previous iteration's model on this bootstrapped dataset.
+   - Repeat the bootstrapping  and retraining until all examples are appended with the correct rationales.
+   - Save the final model.
 5. Evaluate all models on the GSM8K test split using consistent decoding to compute EM accuracy.
 
 ## Reproducing the experiments (high-level)
 
 Prerequisites:
 
-- Python 3.8+ (recommended)
-- CUDA-enabled GPU for efficient training and inference (if using local GPUs)
-- vLLM for consistent decoding (or an alternate deterministic decoding setup)
+- Python 3.11 (recommended)
+- CUDA-enabled GPU for efficient training and inference
+- vLLM for bulk inference/bootstrapping
 - Typical ML stack: torch, transformers, datasets, and other utilities (see requirements.txt if present)
 
-High-level commands (replace placeholders as needed):
-
-1. Install dependencies:
-
-   pip install -r requirements.txt
-
-2. Prepare GSM8K dataset (using Hugging Face datasets or provided scripts):
-
-   python scripts/prepare_gsm8k.py --out data/gsm8k
-
-3. Evaluate Zero-Shot CoT:
-
-   python eval_zero_shot.py --model meta-llama/Llama-3.2-3B-Instruct --data data/gsm8k/test --prompt prompts/zero_shot_cot.md
-
-4. Train Vanilla SFT:
-
-   python train_sft.py --model meta-llama/Llama-3.2-3B-Instruct --train data/gsm8k/train --val data/gsm8k/val --output models/vanilla_sft
-
-5. Run STaR iterations (example loop):
-
-   for iter in 1 2 3; do
-     python generate_rationales.py --model models/current --data data/gsm8k/train --out data/rationales/iter${iter}.jsonl --hints prompts/rationalization_hints.md
-     python filter_rationales.py --input data/rationales/iter${iter}.jsonl --output data/curated/iter${iter}.jsonl
-     python train_sft.py --model meta-llama/Llama-3.2-3B-Instruct --train data/curated/iter${iter}.jsonl --val data/gsm8k/val --output models/iter${iter}
-     # set models/current to models/iter${iter}
-   done
+High-level commands : Please check the report.
 
 Notes: the repository may contain scripts and prompt files. Replace script names and paths with the actual files in this repo.
 
@@ -100,16 +65,18 @@ Notes: the repository may contain scripts and prompt files. Replace script names
 ## Evaluation
 
 - We use exact-match (EM) accuracy on GSM8K test as the primary metric. Where possible, also report answer-token match, and analyze common failure modes.
-- When reporting numbers, include decoding parameters and seeds.
+
 
 ## Contributing
 
 Contributions, issue reports, and pull requests are welcome. Please open an issue to discuss larger changes before submitting a PR.
 
-## License
+## References
 
-This repository does not include a license file by default. Add a LICENSE file to clarify usage (e.g., MIT, Apache-2.0).
+Eric Zelikman, Yuhuai Wu, Jesse Mu, and Noah D. Goodman. STaR: Self-Taught Rea
+soner—Bootstrapping Reasoning With Reasoning. arXiv:2203.14465, 2022.
 
 ## Contact
 
-For questions or collaboration, open an issue or reach out to the repository owner: @adarshm0han
+For questions or collaboration, open an issue or reach out to the repository owner: @adarshm0han.
+Linkedin: https://www.linkedin.com/in/adarshm0han/
