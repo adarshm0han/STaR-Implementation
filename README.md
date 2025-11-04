@@ -1,4 +1,5 @@
 # STaR-Implementation
+<img width="1434" height="980" alt="diagram-export-11-4-2025-12_31_17-AM" src="https://github.com/user-attachments/assets/cd6d7e97-a3b1-4a1c-bf14-eca77571bfec" />
 
 Implementation of the STaR (Self-Taught Reasoner) framework to bootstrap chain-of-thought (CoT) reasoning on GSM8K using meta-llama/Llama-3.2-3B-Instruct.
 
